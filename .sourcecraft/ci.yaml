@@ -1,0 +1,49 @@
+env:
+  # Access key Web3Forms. Next.js подставляет NEXT_PUBLIC_* в клиентский бандл
+  # на этапе сборки, поэтому переменная должна быть доступна внутри build-site.
+  NEXT_PUBLIC_WEB3FORMS_KEY: ${{ secrets.WEB3FORMS_KEY }}
+
+on:
+  push:
+    - workflows: build-site
+      filter:
+        branches: ["main", "zhirochist1"]
+
+workflows:
+  build-site:
+    tasks:
+      - name: build-and-publish
+        cubes:
+          - name: build-static-site
+            image: docker.io/library/node:22
+            script:
+              - |
+                # Кубик исполняется через sh (dash), поэтому pipefail недоступен
+                set -eu
+
+                # Зависимости проекта
+                npm install --no-audit --no-fund
+
+                # Серверный API-роут с Prisma несовместим со статическим экспортом,
+                # поэтому исключаем его только на время статической сборки
+                rm -rf src/app/api
+
+                # Статическая сборка Next.js (output: "export") в каталог out/
+                cp next.config.static.ts next.config.ts
+                npx next build
+
+                # Готовим файлы сайта вне рабочей директории репозитория
+                rm -rf /tmp/site-publish
+                mkdir -p /tmp/site-publish
+                cp -r out/. /tmp/site-publish/
+
+                # Публикуем результат в ветку release: только каталог site/
+                git config user.name "SourceCraft CI"
+                git config user.email "ci@sourcecraft.dev"
+                git checkout --orphan release
+                find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+                mkdir -p site
+                cp -r /tmp/site-publish/. site/
+                git add -A
+                git commit -m "site: publish static build ${SOURCECRAFT_COMMIT_SHORT_SHA}"
+                git push --force origin release

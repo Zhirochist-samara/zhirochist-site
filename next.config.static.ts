@@ -6,6 +6,10 @@ import type { NextConfig } from "next";
 // После сборки в папке `out/` будет готовый статический сайт — загрузите её в репозиторий GitHub.
 
 const nextConfig: NextConfig = {
+  // Сайт публикуется по адресу https://<org>.sourcecraft.site/<repo>/,
+  // поэтому все маршруты и файлы ресурсов должны идти с этим префиксом.
+  // Без basePath стили и скрипты запрашиваются от корня домена и отдают 404.
+  basePath: "/zhirochist",
   output: "export",
   images: { unoptimized: true },
   typescript: { ignoreBuildErrors: true },

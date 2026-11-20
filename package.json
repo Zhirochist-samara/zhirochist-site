@@ -7,7 +7,7 @@
 "build": "next build",
 "static-build": "cp next.config.static.ts next.config.ts && next build",
 "start": "next start",
-"lint": "eslint ."
+"lint": "eslint .",
 },
     "db:push": "prisma db push --accept-data-loss",
     "db:generate": "prisma generate",
